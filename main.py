@@ -9,6 +9,7 @@ import re
 
 app = FastAPI()
 
+# CORS enabled
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,26 +27,40 @@ class CodeResponse(BaseModel):
 
 
 def execute_python_code(code: str) -> dict:
+    """
+    Execute Python code and return exact stdout or traceback.
+    """
     old_stdout = sys.stdout
     sys.stdout = StringIO()
 
     try:
         exec(code, {})
         output = sys.stdout.getvalue()
-        return {"success": True, "output": output}
+        return {
+            "success": True,
+            "output": output
+        }
 
     except Exception:
         output = traceback.format_exc()
-        return {"success": False, "output": output}
+        return {
+            "success": False,
+            "output": output
+        }
 
     finally:
         sys.stdout = old_stdout
 
 
 def analyze_error_lines(traceback_text: str) -> List[int]:
+    """
+    Extract the exact error line number from Python traceback.
+    """
     matches = re.findall(r'line (\d+)', traceback_text)
+
     if matches:
         return [int(matches[-1])]
+
     return []
 
 
@@ -69,4 +84,6 @@ def code_interpreter(request: CodeRequest):
 
 @app.get("/")
 def home():
-    return {"message": "Code interpreter API is running"}
+    return {
+        "message": "Code interpreter API is running"
+    }
